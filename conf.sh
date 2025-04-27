@@ -5,15 +5,18 @@ set -e  # Exit if anything fails
 GREEN='\e[32m'
 RESET='\e[0m'
 
+echo -e "${GREEN}Installing SUDO...${RESET}"
+apt install sudo
+
 echo -e "${GREEN}Updating system...${RESET}"
 sudo apt update
 sudo apt upgrade -y
 
-echo -e "${GREEN}Installing essential drivers and minimal GUI environment...${RESET}"
+echo -e "${GREEN}Installing essential packages...${RESET}"
 sudo apt install -y firmware-linux firmware-linux-free firmware-linux-nonfree firmware-iwlwifi \
 xorg openbox obconf lightdm lightdm-gtk-greeter \
 network-manager network-manager-gnome wireless-tools wpasupplicant lxpolkit \
-alsa-utils pulseaudio pavucontrol chromium xfce4-power-manager feh curl unzip
+alsa-utils pulseaudio pavucontrol chromium xfce4-power-manager feh curl unzip lxterminal
 
 echo -e "${GREEN}Creating user 'star-campus' if it doesn't exist...${RESET}"
 if ! id "star-campus" &>/dev/null; then
@@ -34,7 +37,14 @@ echo -e "${GREEN}Creating Chromium Watcher script...${RESET}"
 sudo tee /usr/local/bin/chromium-watcher.sh > /dev/null <<'EOF'
 #!/bin/bash
 touch /tmp/watcher_enabled
-chromium --kiosk --incognito "https://starteam.grupoiberostar.com/sesion/nuevo?ref=campus" &
+
+# Launch Chromium initially
+chromium --kiosk --incognito \
+--no-first-run --disable-translate --disable-infobars --disable-session-crashed-bubble --disable-pinch \
+--overscroll-history-navigation=0 --start-maximized \
+--load-extension=/usr/lib/chromium/extensions/nav-bar-ext \
+"https://starteam.grupoiberostar.com/sesion/nuevo?ref=campus" &
+
 while true
 do
     if [ ! -f /tmp/watcher_enabled ]; then
@@ -42,7 +52,11 @@ do
         exit 0
     fi
     if ! pgrep -x "chromium" > /dev/null; then
-        chromium --kiosk --incognito "https://starteam.grupoiberostar.com/sesion/nuevo?ref=campus" &
+        chromium --kiosk --incognito \
+        --no-first-run --disable-translate --disable-infobars --disable-session-crashed-bubble --disable-pinch \
+        --overscroll-history-navigation=0 --start-maximized \
+        --load-extension=/usr/lib/chromium/extensions/nav-bar-ext \
+        "https://starteam.grupoiberostar.com/sesion/nuevo?ref=campus" &
     fi
     sleep 5
 done
@@ -51,19 +65,19 @@ EOF
 sudo chmod +x /usr/local/bin/chromium-watcher.sh
 sudo chown star-campus:star-campus /usr/local/bin/chromium-watcher.sh
 
-echo -e "${GREEN}Downloading and setting up wallpaper for star-campus...${RESET}"
+echo -e "${GREEN}Downloading and setting up wallpaper...${RESET}"
 mkdir -p /home/star-campus/Pictures
 curl -L -o /home/star-campus/Pictures/wallpaper.png "https://github.com/iberostar-itbrasil/star-campOS/raw/main/wallpaper.png"
 sudo chown -R star-campus:star-campus /home/star-campus/Pictures
 
-echo -e "${GREEN}Installing custom Chromium extension...${RESET}"
+echo -e "${GREEN}Downloading and setting up Chromium extension...${RESET}"
 sudo mkdir -p /usr/lib/chromium/extensions/nav-bar-ext
 curl -L -o /tmp/nav-bar-ext.zip "https://github.com/iberostar-itbrasil/star-campOS/raw/main/nav-bar-ext.zip"
 sudo unzip -o /tmp/nav-bar-ext.zip -d /usr/lib/chromium/extensions/nav-bar-ext
 sudo chmod -R 755 /usr/lib/chromium/extensions/nav-bar-ext
 rm /tmp/nav-bar-ext.zip
 
-echo -e "${GREEN}Setting up Openbox autostart for star-campus...${RESET}"
+echo -e "${GREEN}Setting up Openbox autostart...${RESET}"
 mkdir -p /home/star-campus/.config/openbox
 
 cat <<EOF > /home/star-campus/.config/openbox/autostart
@@ -88,12 +102,12 @@ if ! grep -q "A-S-T" "$CONFIG_FILE"; then
   sed -i '/<keyboard>/a \
     <keybind key="A-S-T">\
       <action name="Execute">\
-        <command>rm -f /tmp/watcher_enabled && x-terminal-emulator</command>\
+        <command>rm -f /tmp/watcher_enabled && lxterminal</command>\
       </action>\
     </keybind>' "$CONFIG_FILE"
 fi
 
-echo -e "${GREEN}Setting ownership to star-campus user for home directory...${RESET}"
+echo -e "${GREEN}Setting ownership to star-campus user for all files...${RESET}"
 sudo chown -R star-campus:star-campus /home/star-campus
 
-echo -e "${GREEN}Finalizing setup... Please reboot your system.${RESET}"
+echo -e "${GREEN}FINAL STEP: Setup completed! Please REBOOT your system.${RESET}"
