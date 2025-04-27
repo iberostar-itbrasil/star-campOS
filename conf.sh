@@ -76,11 +76,85 @@ w:fullscreen()
 
 -- Disable right-click menu
 webview.context_menu_enabled = false
+
+-- Inject custom navigation bar
+w.view:eval_js([[
+  // Create navigation bar
+  const navBar = document.createElement("div");
+  navBar.id = "custom-nav-bar";
+  navBar.innerHTML = \`
+    <button id="home-btn" class="campus-menu-btn">
+       <svg width="30" height="30" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 10L12 2L21 10V20C21 20.55 20.55 21 20 21H16C15.45 21 15 20.55 15 20V15C15 14.45 14.55 14 14 14H10C9.45 14 9 14.45 9 15V20C9 20.55 8.55 21 8 21H4C3.45 21 3 20.55 3 20V10Z"/>
+      </svg>
+    </button>
+      
+    <button id="back-btn" class="campus-menu-btn">
+      <svg width="35" height="35" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 12H4M10 6L4 12L10 18" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    
+    <button id="close-btn" class="campus-menu-btn">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+    </button>
+  \`;
+
+  document.body.appendChild(navBar);
+
+  // Apply styles
+  const style = document.createElement('style');
+  style.textContent = \`
+    .campus-menu-btn {
+      all: unset !important;
+      cursor: pointer;
+    }
+
+    .campus-menu-btn svg:hover {
+      fill: #086c4f;
+    }
+
+    .campus-menu-btn svg:hover path {
+      stroke: #086c4f;
+    }
+
+    #custom-nav-bar {
+      width: 135px;
+      display: flex;
+      justify-content: space-between;
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      z-index: 10000;
+      
+      background: #3ea899;
+      padding: 4px 4px 0px 4px;
+      border-radius: 8px 8px 0 0;
+    }
+  \`;
+  document.head.appendChild(style);
+
+  // Button actions
+  document.getElementById("home-btn").addEventListener("click", () => {
+    window.location.href = "https://starteam.grupoiberostar.com/sesion/nuevo?ref=campus";
+  });
+
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.history.back();
+  });
+
+  document.getElementById("close-btn").addEventListener("click", () => {
+    window.location.href = "https://starteam.grupoiberostar.com/";
+  });
+]]);
 EOF
 
 sudo chown -R star-campus:star-campus /home/star-campus/.config/luakit
 
-echo -e "${GREEN}Creating .Xmodmap to disable dangerous shortcuts...${RESET}"
+echo -e "${GREEN}Creating .Xmodmap to disable dangerous shortcuts (extra safety)...${RESET}"
 cat <<EOF > /home/star-campus/.Xmodmap
 ! Disable Ctrl+T (New Tab)
 keycode 28 = NoSymbol
