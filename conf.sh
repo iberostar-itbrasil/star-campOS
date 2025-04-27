@@ -16,8 +16,8 @@ echo -e "${GREEN}Installing essential packages...${RESET}"
 sudo apt install -y firmware-linux firmware-linux-free firmware-linux-nonfree firmware-iwlwifi \
 xorg openbox obconf lightdm lightdm-gtk-greeter \
 network-manager network-manager-gnome wireless-tools wpasupplicant lxpolkit \
-alsa-utils pulseaudio pavucontrol luakit xfce4-power-manager feh curl unzip \
-x11-xserver-utils xterm
+alsa-utils pulseaudio pavucontrol xfce4-power-manager feh curl unzip \
+x11-xserver-utils xterm python3 python3-pyqt5 python3-pyqt5.qtwebengine
 
 echo -e "${GREEN}Creating user 'star-campus' if it doesn't exist...${RESET}"
 if ! id "star-campus" &>/dev/null; then
@@ -39,7 +39,7 @@ mkdir -p /home/star-campus/Pictures
 curl -L -o /home/star-campus/Pictures/wallpaper.png "https://github.com/iberostar-itbrasil/star-campOS/raw/main/wallpaper.png"
 sudo chown -R star-campus:star-campus /home/star-campus/Pictures
 
-echo -e "${GREEN}Setting up Openbox autostart...${RESET}"
+echo -e "${GREEN}Setting up Openbox autostart to launch Kiosk Browser...${RESET}"
 mkdir -p /home/star-campus/.config/openbox
 
 cat <<EOF > /home/star-campus/.config/openbox/autostart
@@ -51,122 +51,69 @@ lxpolkit &
 pulseaudio --start &
 nm-applet &
 
-# Start Luakit Kiosk
-luakit &
+# Start Python Kiosk Browser
+python3 /home/star-campus/kiosk_browser.py &
 EOF
 
 sudo chown -R star-campus:star-campus /home/star-campus/.config
 
-echo -e "${GREEN}Creating Luakit Kiosk Configuration...${RESET}"
-mkdir -p /home/star-campus/.config/luakit
+echo -e "${GREEN}Creating Python Kiosk Browser App...${RESET}"
 
-cat <<EOF > /home/star-campus/.config/luakit/rc.lua
-local window = require "window"
-local modes = require "modes"
+cat <<EOF > /home/star-campus/kiosk_browser.py
+#!/usr/bin/env python3
 
--- Remove all keybinds
-modes.remap_binds("normal", {})
-modes.remap_binds("insert", {})
-modes.remap_binds("command", {})
-modes.remap_binds("prompt", {})
+import sys
+from PyQt5.QtCore import QUrl
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QHBoxLayout
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 
--- Open locked URL fullscreen
-local w = window.open("https://starteam.grupoiberostar.com/sesion/nuevo?ref=campus")
-w:fullscreen()
+class KioskBrowser(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
--- Disable right-click menu
-webview.context_menu_enabled = false
+        self.homepage = "https://starteam.grupoiberostar.com/sesion/nuevo?ref=campus"
 
--- Inject custom navigation bar
-w.view:eval_js([[
-  // Create navigation bar
-  const navBar = document.createElement("div");
-  navBar.id = "custom-nav-bar";
-  navBar.innerHTML = \`
-    <button id="home-btn" class="campus-menu-btn">
-       <svg width="30" height="30" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 10L12 2L21 10V20C21 20.55 20.55 21 20 21H16C15.45 21 15 20.55 15 20V15C15 14.45 14.55 14 14 14H10C9.45 14 9 14.45 9 15V20C9 20.55 8.55 21 8 21H4C3.45 21 3 20.55 3 20V10Z"/>
-      </svg>
-    </button>
-      
-    <button id="back-btn" class="campus-menu-btn">
-      <svg width="35" height="35" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 12H4M10 6L4 12L10 18" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    
-    <button id="close-btn" class="campus-menu-btn">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="4" stroke-linecap="round"/>
-      </svg>
-    </button>
-  \`;
+        central_widget = QWidget()
+        layout = QVBoxLayout(central_widget)
+        self.setCentralWidget(central_widget)
 
-  document.body.appendChild(navBar);
+        self.browser = QWebEngineView()
+        self.browser.load(QUrl(self.homepage))
+        layout.addWidget(self.browser)
 
-  // Apply styles
-  const style = document.createElement('style');
-  style.textContent = \`
-    .campus-menu-btn {
-      all: unset !important;
-      cursor: pointer;
-    }
+        nav_bar = QHBoxLayout()
 
-    .campus-menu-btn svg:hover {
-      fill: #086c4f;
-    }
+        home_button = QPushButton("Home")
+        back_button = QPushButton("Back")
+        close_button = QPushButton("Close")
 
-    .campus-menu-btn svg:hover path {
-      stroke: #086c4f;
-    }
+        home_button.clicked.connect(self.go_home)
+        back_button.clicked.connect(self.browser.back)
+        close_button.clicked.connect(self.close_browser)
 
-    #custom-nav-bar {
-      width: 135px;
-      display: flex;
-      justify-content: space-between;
-      position: fixed;
-      left: 50%;
-      bottom: 0;
-      transform: translateX(-50%);
-      z-index: 10000;
-      
-      background: #3ea899;
-      padding: 4px 4px 0px 4px;
-      border-radius: 8px 8px 0 0;
-    }
-  \`;
-  document.head.appendChild(style);
+        nav_bar.addWidget(home_button)
+        nav_bar.addWidget(back_button)
+        nav_bar.addWidget(close_button)
 
-  // Button actions
-  document.getElementById("home-btn").addEventListener("click", () => {
-    window.location.href = "https://starteam.grupoiberostar.com/sesion/nuevo?ref=campus";
-  });
+        layout.addLayout(nav_bar)
 
-  document.getElementById("back-btn").addEventListener("click", () => {
-    window.history.back();
-  });
+        self.setWindowTitle("StarCampus Kiosk")
+        self.showFullScreen()
 
-  document.getElementById("close-btn").addEventListener("click", () => {
-    window.location.href = "https://starteam.grupoiberostar.com/";
-  });
-]]);
+    def go_home(self):
+        self.browser.load(QUrl(self.homepage))
+
+    def close_browser(self):
+        QApplication.quit()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    browser = KioskBrowser()
+    sys.exit(app.exec_())
 EOF
 
-sudo chown -R star-campus:star-campus /home/star-campus/.config/luakit
-
-echo -e "${GREEN}Creating .Xmodmap to disable dangerous shortcuts (extra safety)...${RESET}"
-cat <<EOF > /home/star-campus/.Xmodmap
-! Disable Ctrl+T (New Tab)
-keycode 28 = NoSymbol
-
-! Disable Ctrl+W (Close Tab)
-keycode 25 = NoSymbol
-
-! Disable Alt+F4 (Close Window)
-keycode 70 = NoSymbol
-EOF
-
-sudo chown star-campus:star-campus /home/star-campus/.Xmodmap
+sudo chown star-campus:star-campus /home/star-campus/kiosk_browser.py
+sudo chmod +x /home/star-campus/kiosk_browser.py
 
 echo -e "${GREEN}Setting ownership for all files to star-campus...${RESET}"
 sudo chown -R star-campus:star-campus /home/star-campus
