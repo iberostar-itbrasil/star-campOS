@@ -5,7 +5,7 @@ set -e  # Exit if anything fails
 GREEN='\e[32m'
 RESET='\e[0m'
 
-echo -e "${GREEN}Installing sudo...${RESET}"
+echo -e "${GREEN}Installing sudo first...${RESET}"
 apt install -y sudo
 
 echo -e "${GREEN}Updating system...${RESET}"
@@ -72,9 +72,9 @@ curl -L -o /home/star-campus/Pictures/wallpaper.png "https://github.com/iberosta
 sudo chown -R star-campus:star-campus /home/star-campus/Pictures
 
 echo -e "${GREEN}Downloading and setting up Chromium extension...${RESET}"
-sudo mkdir -p /usr/lib/chromium/extensions/nav-bar-ext
+sudo mkdir -p /usr/lib/chromium/extensions
 curl -L -o /tmp/nav-bar-ext.zip "https://github.com/iberostar-itbrasil/star-campOS/raw/main/nav-bar-ext.zip"
-sudo unzip -o /tmp/nav-bar-ext.zip -d /usr/lib/chromium/extensions/nav-bar-ext
+sudo unzip -o /tmp/nav-bar-ext.zip -d /usr/lib/chromium/extensions/
 sudo chmod -R 755 /usr/lib/chromium/extensions/nav-bar-ext
 rm /tmp/nav-bar-ext.zip
 
@@ -90,11 +90,7 @@ feh --bg-scale /home/star-campus/Pictures/wallpaper.png &
 
 # Start PolicyKit agent (for Wi-Fi permissions)
 lxpolkit &
-
-# Start PulseAudio
 pulseaudio --start &
-
-# Start NetworkManager Applet (Wi-Fi GUI)
 nm-applet &
 
 # Start Chromium Watcher
