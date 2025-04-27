@@ -5,8 +5,8 @@ set -e  # Exit if anything fails
 GREEN='\e[32m'
 RESET='\e[0m'
 
-echo -e "${GREEN}Installing SUDO...${RESET}"
-apt install sudo
+echo -e "${GREEN}Installing sudo...${RESET}"
+apt install -y sudo
 
 echo -e "${GREEN}Updating system...${RESET}"
 sudo apt update
@@ -16,15 +16,16 @@ echo -e "${GREEN}Installing essential packages...${RESET}"
 sudo apt install -y firmware-linux firmware-linux-free firmware-linux-nonfree firmware-iwlwifi \
 xorg openbox obconf lightdm lightdm-gtk-greeter \
 network-manager network-manager-gnome wireless-tools wpasupplicant lxpolkit \
-alsa-utils pulseaudio pavucontrol chromium xfce4-power-manager feh curl unzip lxterminal
+alsa-utils pulseaudio pavucontrol chromium xfce4-power-manager feh curl unzip \
+x11-xserver-utils xterm
 
 echo -e "${GREEN}Creating user 'star-campus' if it doesn't exist...${RESET}"
 if ! id "star-campus" &>/dev/null; then
-    sudo adduser --disabled-password --gecos "" star-campus
+    adduser --disabled-password --gecos "" star-campus
 fi
 
 echo -e "${GREEN}Adding 'star-campus' user to necessary groups...${RESET}"
-sudo usermod -aG audio,video,netdev,plugdev star-campus
+usermod -aG audio,video,netdev,plugdev star-campus
 
 echo -e "${GREEN}Enabling necessary services...${RESET}"
 sudo systemctl enable NetworkManager
@@ -81,16 +82,42 @@ echo -e "${GREEN}Setting up Openbox autostart...${RESET}"
 mkdir -p /home/star-campus/.config/openbox
 
 cat <<EOF > /home/star-campus/.config/openbox/autostart
+# Load custom keyboard map (block shortcuts)
+xmodmap /home/star-campus/.Xmodmap &
+
+# Set wallpaper
 feh --bg-scale /home/star-campus/Pictures/wallpaper.png &
+
+# Start PolicyKit agent (for Wi-Fi permissions)
 lxpolkit &
+
+# Start PulseAudio
 pulseaudio --start &
+
+# Start NetworkManager Applet (Wi-Fi GUI)
 nm-applet &
+
+# Start Chromium Watcher
 chromium-watcher.sh &
 EOF
 
 sudo chown -R star-campus:star-campus /home/star-campus/.config
 
-echo -e "${GREEN}Configuring Openbox keyboard shortcuts (Shift + Alt + T to open terminal and stop watcher)...${RESET}"
+echo -e "${GREEN}Creating .Xmodmap to disable dangerous shortcuts...${RESET}"
+cat <<EOF > /home/star-campus/.Xmodmap
+! Disable Ctrl+T (New Tab)
+keycode 28 = NoSymbol
+
+! Disable Ctrl+W (Close Tab)
+keycode 25 = NoSymbol
+
+! Disable Alt+F4 (Close Window)
+keycode 70 = NoSymbol
+EOF
+
+sudo chown star-campus:star-campus /home/star-campus/.Xmodmap
+
+echo -e "${GREEN}Configuring Openbox keyboard shortcuts (Shift + Alt + T to open xterm and stop watcher)...${RESET}"
 CONFIG_FILE="/home/star-campus/.config/openbox/rc.xml"
 if [ ! -f "$CONFIG_FILE" ]; then
   mkdir -p $(dirname "$CONFIG_FILE")
@@ -102,12 +129,12 @@ if ! grep -q "A-S-T" "$CONFIG_FILE"; then
   sed -i '/<keyboard>/a \
     <keybind key="A-S-T">\
       <action name="Execute">\
-        <command>rm -f /tmp/watcher_enabled && lxterminal</command>\
+        <command>rm -f /tmp/watcher_enabled && xterm</command>\
       </action>\
     </keybind>' "$CONFIG_FILE"
 fi
 
-echo -e "${GREEN}Setting ownership to star-campus user for all files...${RESET}"
+echo -e "${GREEN}Setting ownership for all files to star-campus...${RESET}"
 sudo chown -R star-campus:star-campus /home/star-campus
 
-echo -e "${GREEN}FINAL STEP: Setup completed! Please REBOOT your system.${RESET}"
+echo -e "${GREEN}FINAL STEP: Setup completed successfully! Please REBOOT your system.${RESET}"
