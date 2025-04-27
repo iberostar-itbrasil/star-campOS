@@ -39,7 +39,7 @@ sudo chmod +x /usr/local/bin/firefox-watcher.sh
 
 echo "Downloading and setting up wallpaper..."
 mkdir -p ~/Pictures
-curl -L -o ~/Pictures/wallpaper.jpg "https://encurtador.com.br/5caKS"
+curl -L -o ~/Pictures/wallpaper.png "https://github.com/iberostar-itbrasil/star-campOS/raw/main/wallpaper.png"
 
 echo "Installing custom Firefox extension..."
 # Create directory for the extension
@@ -60,7 +60,7 @@ mkdir -p ~/.config/openbox
 
 cat <<EOF > ~/.config/openbox/autostart
 # Set wallpaper using feh
-feh --bg-scale ~/Pictures/wallpaper.jpg &
+feh --bg-scale ~/Pictures/wallpaper.png &
 
 # Start PolicyKit agent (for Wi-Fi permissions)
 lxpolkit &
@@ -68,7 +68,7 @@ lxpolkit &
 # Start PulseAudio
 pulseaudio --start &
 
-# Start NetworkManager Applet (Wi-Fi GUI)
+# Start NetworkManager applet (Wi-Fi GUI)
 nm-applet &
 
 # Start Firefox Watcher (launch Firefox Kiosk+Private mode)
