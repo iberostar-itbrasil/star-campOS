@@ -94,7 +94,7 @@ class Browser(QMainWindow):
         self.main_layout.addLayout(self.navbar_layout)
 
         # Load initial page
-        self.webview.setUrl(QUrl("https://www.youtube.com"))
+        self.webview.setUrl(QUrl("https://starteam.grupoiberostar.com/pt/sessao/novo"))
 
         # Connection monitor
         self.timer = QTimer()
@@ -105,7 +105,6 @@ class Browser(QMainWindow):
         self.showFullScreen()
 
     def svg_icon(self, svg_content):
-        """Helper to create a QIcon from inline SVG text"""
         from PyQt5.QtSvg import QSvgRenderer
         from PyQt5.QtGui import QPixmap, QPainter
 
