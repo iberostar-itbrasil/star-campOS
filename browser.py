@@ -15,7 +15,7 @@ os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu"
 class Browser(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Custom Python Browser with Bottom NavBar + Fullscreen")
+        self.setWindowTitle("Star Campus")
         self.setGeometry(0, 0, 1920, 1080)
 
         # Main container widget
@@ -48,11 +48,11 @@ class Browser(QMainWindow):
 
         # Apply SVG Icons (previous ones as SVGs in memory)
         self.home_btn.setIcon(self.svg_icon('''
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 12 L12 3 L21 12" />
-      <path d="M5 12 V21 H19 V12" />
-    </svg>
-'''))
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12 L12 3 L21 12" />
+            <path d="M5 12 V21 H19 V12" />
+            </svg>
+        '''))
         self.back_btn.setIcon(self.svg_icon('''
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         '''))
@@ -119,7 +119,7 @@ class Browser(QMainWindow):
         return QIcon(image)
 
     def go_home(self):
-        self.webview.setUrl(QUrl("https://www.youtube.com"))
+        self.webview.setUrl(QUrl("https://starteam.grupoiberostar.com/pt/sessao/novo"))
 
     def go_back(self):
         self.webview.back()
@@ -131,7 +131,7 @@ class Browser(QMainWindow):
         try:
             urllib.request.urlopen("https://www.google.com", timeout=5)
         except:
-            print("Connection lost! Reloading page...")
+            print("Conexão Perdida! Recarregando página...")
             self.webview.reload()
 
 if __name__ == "__main__":
