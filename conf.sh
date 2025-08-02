@@ -2,60 +2,51 @@
 
 set -e  # Exit if anything fails
 
-GREEN='\e[32m'
-RESET='\e[0m'
-
-echo -e "${GREEN}Installing essential system components...${RESET}"
-apt install -y sudo
+echo "Updating system..."
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y firmware-linux firmware-linux-free firmware-linux-nonfree firmware-iwlwifi \
-xorg openbox obconf lightdm lightdm-gtk-greeter \
-network-manager network-manager-gnome wireless-tools wpasupplicant lxpolkit \
-alsa-utils pulseaudio pavucontrol xfce4-power-manager feh curl unzip \
-x11-xserver-utils xterm python3 python3-pyqt5 python3-pyqt5.qtwebengine
 
-echo -e "${GREEN}Creating user 'star-campus' if needed...${RESET}"
-if ! id "star-campus" &>/dev/null; then
-    adduser --disabled-password --gecos "" star-campus
-fi
+echo "Installing essential drivers (Wi-Fi, Ethernet, Audio)..."
+sudo apt install -y firmware-linux firmware-linux-free firmware-linux-nonfree \
+firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 firmware-intel-sound
 
-echo -e "${GREEN}Adding 'star-campus' to system groups...${RESET}"
-usermod -aG audio,video,netdev,plugdev star-campus
+echo "Installing graphical system (X11 + Openbox)..."
+sudo apt install -y xorg openbox obconf tint2 lightdm lightdm-gtk-greeter
 
-echo -e "${GREEN}Setting up LightDM for autologin...${RESET}"
-sudo sed -i '/^\[Seat:\*\]/a autologin-user=star-campus\nautologin-session=openbox' /etc/lightdm/lightdm.conf
+echo "Installing networking tools..."
+sudo apt install -y network-manager network-manager-gnome wireless-tools wpasupplicant lxpolkit
 
-echo -e "${GREEN}Downloading and setting up wallpaper...${RESET}"
-mkdir -p /home/star-campus/Pictures
-curl -L -o /home/star-campus/Pictures/wallpaper.png "https://github.com/iberostar-itbrasil/star-campOS/raw/main/wallpaper.png"
-sudo chown -R star-campus:star-campus /home/star-campus/Pictures
+echo "Installing audio system..."
+sudo apt install -y alsa-utils pulseaudio pavucontrol volumeicon-alsa xfce4-volumed
 
-echo -e "${GREEN}Setting up Openbox autostart...${RESET}"
-mkdir -p /home/star-campus/.config/openbox
+echo "Installing browser..."
+sudo apt install -y firefox-esr
 
-cat <<EOF > /home/star-campus/.config/openbox/autostart
-# Set wallpaper
-feh --bg-scale /home/star-campus/Pictures/wallpaper.png &
+echo "Enabling necessary services..."
+sudo systemctl enable NetworkManager
+sudo systemctl enable lightdm
 
-# Start PolicyKit agent
+echo "Adding user to audio group (for sound permissions)..."
+sudo usermod -aG audio $USER
+
+echo "Setting up Openbox autostart for network and audio..."
+mkdir -p ~/.config/openbox
+
+cat <<EOF > ~/.config/openbox/autostart
+# Set background (solid color)
+xsetroot -solid "#222222" &
+# Start PolicyKit agent for Wi-Fi permissions
 lxpolkit &
+# Start PulseAudio daemon
 pulseaudio --start &
+# Start NetworkManager Applet (Wi-Fi GUI)
 nm-applet &
-
-# Start Python Kiosk Browser
-python3 /home/star-campus/kiosk_browser.py &
+# Start Volume Control Tray
+volumeicon &
+# Start Power Manager (battery and brightness control)
+xfce4-power-manager &
+# Start lightweight panel (taskbar)
+tint2 &
 EOF
 
-sudo chown -R star-campus:star-campus /home/star-campus/.config
-
-echo -e "${GREEN}Installing the Kiosk Browser code...${RESET}"
-
-cat <<EOF > /home/star-campus/kiosk_browser.py
-$(sed 's/$/\\n/' /home/star-campus/kiosk_browser.py)
-EOF
-
-sudo chown star-campus:star-campus /home/star-campus/kiosk_browser.py
-sudo chmod +x /home/star-campus/kiosk_browser.py
-
-echo -e "${GREEN}Setup complete. Please REBOOT your system.${RESET}"
+echo "Setup complete! Please REBOOT your system now."
